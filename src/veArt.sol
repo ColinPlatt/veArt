@@ -2,14 +2,54 @@
 pragma solidity ^0.8.13;
 
 import "libSVG/SVG.sol";
+//import {IVeArtProxy} from "contracts-latest/interfaces/IVeArtProxy.sol";
+import "solady/utils/DateTimeLib.sol";
 
-contract veArt {
+interface IPair {
+    function current(address tokenIn, uint amountIn) external view returns(uint);
+}
+
+interface IVotingEscrow {
+    function balanceOfNFT(uint) external view returns (uint);
+    function totalSupply() external view returns (uint);
+}
+
+interface IVeArtProxy {
+    function _tokenURI(uint _tokenId, uint _balanceOf, uint _locked_end, uint _value) external view returns (string memory output);
+}
+
+contract veArt is IVeArtProxy {
     using svg for string;
 
-    function renderSVG() public pure returns (string memory) {
-        return veBackground.card(
-            uint256(1)
-        );
+    IVotingEscrow public constant VOTING_ESCROW = IVotingEscrow(0x8E003242406FBa53619769F31606ef2Ed8A65C00);
+    IPair public constant FLOW_NOTE_PAIR = IPair(0x7e79E7B91526414F49eA4D3654110250b7D9444f);
+    address public constant FLOW_TOKEN = 0xB5b060055F0d1eF5174329913ef861bC3aDdF029;
+    
+    function _tokenURI(uint _tokenId, uint _balanceOf, uint _locked_end, uint _value) external view returns (string memory output) {
+        veBackground.NFT_STATS memory stats = veBackground.NFT_STATS({
+            id:             _tokenId,
+            notionalFlow:   _value,
+            notionalNote:   FLOW_NOTE_PAIR.current(FLOW_TOKEN, _value),
+            votes:          _balanceOf,
+            voteInfluence:  (_balanceOf*10000)/VOTING_ESCROW.totalSupply(),
+            expiry:         _locked_end
+        });
+
+
+
+    }
+
+    function renderSVG() public view returns (string memory) {
+        veBackground.NFT_STATS memory stats = veBackground.NFT_STATS({
+            id:             123,
+            notionalFlow:   1000e18,
+            notionalNote:   10e18,
+            votes:          10e9,
+            voteInfluence:  69,
+            expiry:         block.timestamp + 730 days
+        });
+        
+        return veBackground.card(stats);
     }
 
 }
@@ -18,6 +58,15 @@ library veBackground {
     using svg for string;
     using utils for uint256; 
 
+    struct NFT_STATS {
+        uint id;
+        uint notionalFlow; // notional amount
+        uint notionalNote; // notion amount in NOTE
+        uint votes; //votes
+        uint voteInfluence; // influence in bps
+        uint expiry;        
+    }
+
     string public constant VELO_GREEN = '#00e8c9';
     string public constant BG_BLACK = '#222323';
 
@@ -25,7 +74,7 @@ library veBackground {
     //style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" 
    
 
-    function card(uint256 id)
+    function card(NFT_STATS memory _stats)
         internal 
         pure
         returns (string memory)
@@ -35,9 +84,9 @@ library veBackground {
             string.concat(
                 defs(),
                 bgCard(),
-                idText(id),
+                idText(_stats.id),
                 headerText(),
-                transparentBox(),
+                transparentBox(_stats),
                 veloLogo(),
                 flowLogo()
             )
@@ -86,7 +135,7 @@ library veBackground {
     }
     
 
-    function transparentBox()
+    function transparentBox(NFT_STATS memory _stats)
         private 
         pure
         returns (string memory)
@@ -97,7 +146,8 @@ library veBackground {
                         boxStroke()
                     ).rect(),
                     boxLineProps().line(),
-                    boxTextStatic()
+                    boxTextStatic(),
+                    boxTextDynamic(_stats)
                 );
     }
 
@@ -178,9 +228,89 @@ library veBackground {
                 )
             )
         );
+    }   
+
+    function formatExpirationDate(uint timestamp) private pure returns (string memory) {
+        (uint256 year, uint256 month, uint256 day) = DateTimeLib.timestampToDate(timestamp);
+
+        string[12] memory months = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec'
+        ];
+
+        return string.concat(
+            day.toString(),
+            '-',
+            months[month-1],
+            '-',
+            year.toString()
+        );
     }
 
-    //Votes, Influence, Matures on
+    function boxTextDynamic(NFT_STATS memory _stats) private pure returns (string memory) {
+        return svg.g(
+            string.concat(
+                string('font-family').prop('Courier'),
+                string('fill').prop('white'),
+                string('font-size').prop('18px')
+            ),
+            string.concat(
+                svg.text(
+                    string.concat(
+                        string('x').prop('240'),
+                        string('y').prop('280')
+                    ),
+                    string.concat(
+                        (_stats.notionalFlow/1e18).toString(),
+                        '.',
+                        (_stats.notionalFlow % 1e14).toString()
+                    )
+                ),
+                svg.text(
+                    string.concat(
+                        string('x').prop('240'),
+                        string('y').prop('315')
+                    ),
+                    string.concat(
+                        (_stats.notionalNote/1e18).toString(),
+                        '.',
+                        (_stats.notionalNote % 1e14).toString()
+                    )
+                ),
+                svg.text(
+                    string.concat(
+                        string('x').prop('240'),
+                        string('y').prop('350')
+                    ),
+                    _stats.votes.toString()
+                ),
+                svg.text(
+                    string.concat(
+                        string('x').prop('240'),
+                        string('y').prop('385')
+                    ),
+                    string.concat('0.', _stats.voteInfluence.toString(), '%')
+                ),
+                svg.text(
+                    string.concat(
+                        string('x').prop('240'),
+                        string('y').prop('420')
+                    ),
+                    formatExpirationDate(_stats.expiry)
+                )
+            )
+        );
+    }
 
     function veloLogo() private pure returns (string memory) {
         return svg.g(
