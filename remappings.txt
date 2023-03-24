@@ -1,2 +1,9 @@
-ds-test/=lib/forge-std/lib/ds-test/src/
+LayerZero/=lib/contracts-latest/lib/LayerZero/contracts/
+contracts-latest/=lib/contracts-latest/contracts/
+ds-test/=lib/libSVG/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
+libSVG/=lib/libSVG/src/
+openzeppelin-contracts/=lib/libSVG/lib/openzeppelin-contracts/
+solady/=lib/solady/src/
+solmate/=lib/solady/lib/solmate/src/
+utils/=lib/contracts-latest/test/utils/
