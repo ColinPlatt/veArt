@@ -18,5 +18,43 @@ contract veArtTest is Test {
 
     }
 
+    Pure public pureCt;
+    View public viewCt;
 
+    function testInterface() public {
+
+        pureCt = new Pure();
+        viewCt = new View();
+
+        emit log_string(IView(address(pureCt)).check());
+        emit log_string(IPure(address(viewCt)).check());
+
+    }
+
+}
+
+
+interface IView {
+    function check() external view returns (string memory);
+}
+
+
+interface IPure {
+    function check() external pure returns (string memory);
+}
+
+contract Pure is IPure {
+    string public constant checkStr = "checkPure";
+
+     function check() external pure returns (string memory) {
+        return checkStr;
+     }
+}
+
+contract View is IView {
+    string public checkStr = "checkView";
+
+     function check() external view returns (string memory) {
+        return checkStr;
+     }
 }
