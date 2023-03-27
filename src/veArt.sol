@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "libSVG/SVG.sol";
+import "libSVG/JSON.sol";
 //import {IVeArtProxy} from "contracts-latest/interfaces/IVeArtProxy.sol";
 import "solady/utils/DateTimeLib.sol";
 
@@ -31,12 +32,17 @@ contract veArt is IVeArtProxy {
             notionalFlow:   _value,
             notionalNote:   FLOW_NOTE_PAIR.current(FLOW_TOKEN, _value),
             votes:          _balanceOf,
-            voteInfluence:  (_balanceOf*10000)/VOTING_ESCROW.totalSupply(),
+            voteInfluence:  (_balanceOf*1e7)/VOTING_ESCROW.totalSupply(),
             expiry:         _locked_end
         });
 
+        string memory svgCard = veBackground.card(stats);
 
-
+        return json.formattedMetadata(
+            string.concat('lock #', utils.toString(_tokenId)),
+            "Velocimeter locks, can be used to boost gauge yields, vote on token emission, and receive bribes",
+            svgCard
+        );
     }
 
     function renderSVG() public view returns (string memory) {
@@ -71,8 +77,6 @@ library veBackground {
     string public constant BG_BLACK = '#222323';
 
     string constant SVG_WRAP_TOP = 'xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 500 500" width="500" height="500" xmlns:xlink="http://www.w3.org/1999/xlink"';
-    //style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" 
-   
 
     function card(NFT_STATS memory _stats)
         internal 
@@ -159,29 +163,29 @@ library veBackground {
         string[25] memory curves = [
             "0",
             "20",
-            "40",
-            "60",
             "-20",
-            "-40",
-            "-60",
             "-80",
-            "-10",
-            "-50",
-            "-30",
             "10",
+            "35",
+            "-55",
+            "55",
+            "-75",
+            "75",
+            "-25",
+            "-10",
+            "60",
+            "-60",
+            "40",
+            "-40",
+            "80",
+            "15",
             "30",
             "50",
             "70",
-            "55",
-            "-5",
-            "5",
+            "25",
             "-15",
             "15",
-            "-25",
-            "25",
-            "-35",
-            "35",
-            "-55"
+            "-35"
         ];
       
         unchecked{
@@ -217,14 +221,14 @@ library veBackground {
         return string.concat(
             svg.text(
                 string.concat(
-                    string('x').prop('125'),
+                    string('x').prop('165'),
                     string('y').prop('135'),
                     string('font-family').prop('Lucida Console'),
                     string('fill').prop(VELO_GREEN),
                     string('font-size').prop('20px'),
                     string('font-weight').prop('600')
                 ),
-                string.concat('Voted ID #', _id.toString())
+                string.concat('Voter ID #', _id.toString())
             )
         );
     }
@@ -368,7 +372,7 @@ library veBackground {
                     string.concat(
                         (_stats.notionalFlow/1e18).toString(),
                         '.',
-                        (_stats.notionalFlow % 1e14).toString()
+                        ((_stats.notionalFlow % 1e18)/1e14).toString()
                     )
                 ),
                 svg.text(
@@ -379,7 +383,7 @@ library veBackground {
                     string.concat(
                         (_stats.notionalNote/1e18).toString(),
                         '.',
-                        (_stats.notionalNote % 1e14).toString()
+                        ((_stats.notionalNote % 1e18)/1e14).toString()
                     )
                 ),
                 svg.text(
@@ -387,7 +391,11 @@ library veBackground {
                         string('x').prop('240'),
                         string('y').prop('350')
                     ),
-                    _stats.votes.toString()
+                    string.concat(
+                        (_stats.votes/1e18).toString(),
+                        '.',
+                        ((_stats.votes % 1e18)/1e14).toString()
+                    )
                 ),
                 svg.text(
                     string.concat(
@@ -500,36 +508,7 @@ library veBackground {
     }
 
     function flowText() private pure returns (string memory) {
-        return string.concat(
-            svg.text(
-                string.concat(
-                    string('x').prop('110'),
-                    string('y').prop('195'),
-                    string('font-family').prop('Lucida Console'),
-                    string('fill').prop(VELO_GREEN),
-                    string('font-size').prop('30px'),
-                    string('font-weight').prop('800')
-                ),
-                'FLOW'
-            ),
-            flowSubText()
-        );
-    }
-
-    function flowSubText() private pure returns (string memory) {
-        return string.concat(
-            svg.text(
-                string.concat(
-                    string('x').prop('110'),
-                    string('y').prop('220'),
-                    string('font-family').prop('Courier'),
-                    string('fill').prop('gray'),
-                    string('font-size').prop('18px'),
-                    string('font-weight').prop('800')
-                ),
-                'Liquidity Lab Details'
-            )
-        );
+        return '<text x="110" y="195" font-family="Lucida Console" fill="#00e8c9" font-size="30px" font-weight="800">FLOW</text><text x="110" y="220" font-family="Courier" fill="lightGray" font-size="18px" font-weight="800">Liquidity Lab Details</text>';
     }
 
     function headerText() private pure returns (string memory) {
@@ -537,42 +516,14 @@ library veBackground {
             '',
             string.concat(
                 velocimeterText(),
-                veFLOWText(), 
                 gradiantLine()
             )
         );
     }
 
-    function velocimeterText() private pure returns (string memory) {
-        return string.concat(
-            svg.text(
-                string.concat(
-                    string('x').prop('125'),
-                    string('y').prop('45'),
-                    string('font-family').prop('Lucida Console'),
-                    string('fill').prop(VELO_GREEN),
-                    string('font-size').prop('24px'),
-                    string('font-weight').prop('600')
-                ),
-                'VELOCIMETER'
-            )
-        );
-    }
 
-    function veFLOWText() private pure returns (string memory) {
-        return string.concat(
-            svg.text(
-                string.concat(
-                    string('x').prop('125'),
-                    string('y').prop('80'),
-                    string('font-family').prop('Lucida Console'),
-                    string('fill').prop('white'),
-                    string('font-size').prop('40px'),
-                    string('font-weight').prop('600')
-                ),
-                'veFLOW NFT'
-            )
-        );
+    function velocimeterText() private pure returns (string memory) {
+        return '<text x="125" y="45" font-family="Lucida Console" fill="#00e8c9" font-size="24px" font-weight="600">VELOCIMETER</text><text x="125" y="80" font-family="Lucida Console" fill="white" font-size="40px" font-weight="600">veFLOW NFT</text>';
     }
 
     function gradiantLine() private pure returns (string memory) {
