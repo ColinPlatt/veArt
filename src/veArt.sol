@@ -93,10 +93,56 @@ library veBackground {
         );
     }
 
+    struct curveParams {
+        uint256 offset0;
+        uint256 offset1;
+        uint256 r;
+        string cx;
+    }
+
+    function curveDefs() private pure returns (string memory curvesDefs_) {
+
+        curveParams[8] memory curves = [
+            curveParams( 0,  80, 100,   "50" ),
+            curveParams(10, 100,  80,  "-20" ),
+            curveParams( 0, 100,  50,   "40" ),
+            curveParams( 0, 100,  80,   "100"),
+            curveParams(70, 100,  75,  "-40" ),
+            curveParams(50, 100,  75,   "130"),
+            curveParams(50, 100,  30,   "20" ),
+            curveParams(50, 100,  30,   "70" )
+        ];
+
+      
+        unchecked{
+            for (uint256 i = 0; i<8; ++i) {
+                
+                curvesDefs_ = string.concat(
+                    curvesDefs_,
+                    svg.radialGradient(
+                        string.concat(
+                            string('id').prop(string.concat('curveGradiant_', i.toString())),
+                            string('r').prop(string.concat(curves[i].r.toString(), '%')),
+                            string('cx').prop(string.concat(curves[i].cx, '%'))
+                        ),
+                        string.concat(
+                            svg.gradientStop(curves[i].offset0, VELO_GREEN, string('stop-opacity').prop('1')),
+                            svg.gradientStop(curves[i].offset1, VELO_GREEN, string('stop-opacity').prop('0'))
+                        )
+                    )
+                );
+            }
+        }
+        
+
+    }
+
     function defs() private pure returns (string memory) {
         return string('defs').el(
             '',
             string.concat(
+                '<path id="curve" d="m0 450 c100-0 300-250 500-250" fill="none"  stroke-width="4"/>',
+                curveDefs(),
                 svg.radialGradient(
                     string('id').prop('greenGradiant'),
                     string.concat(
@@ -108,14 +154,63 @@ library veBackground {
         );
     }
 
+
+    function bgCurves() private pure returns (string memory curveBG_)  {
+        string[25] memory curves = [
+            "0",
+            "20",
+            "40",
+            "60",
+            "-20",
+            "-40",
+            "-60",
+            "-80",
+            "-10",
+            "-50",
+            "-30",
+            "10",
+            "30",
+            "50",
+            "70",
+            "55",
+            "-5",
+            "5",
+            "-15",
+            "15",
+            "-25",
+            "25",
+            "-35",
+            "35",
+            "-55"
+        ];
+      
+        unchecked{
+            for (uint256 i = 0; i<25; ++i) {
+                curveBG_ = string.concat(
+                    curveBG_,
+                    svg.use(
+                        '#curve',
+                        string.concat(
+                            string('y').prop(curves[i]),
+                            string('stroke').prop(string.concat('url(#curveGradiant_',(i%7).toString(),')'))
+                        )
+                    )
+                );
+            }
+        }
+    }
+
     function bgCard() private pure returns (string memory) {
         return string.concat(
-            string('x').prop('0'),
-            string('y').prop('0'),
-            string('width').prop('100%'),
-            string('height').prop('100%'),
-            string('fill').prop(BG_BLACK)
-        ).rect();
+            string.concat(
+                string('x').prop('0'),
+                string('y').prop('0'),
+                string('width').prop('100%'),
+                string('height').prop('100%'),
+                string('fill').prop(BG_BLACK)
+            ).rect(),
+            bgCurves()
+        );
     }
 
     function idText(uint256 _id) private pure returns (string memory) {
@@ -158,8 +253,8 @@ library veBackground {
             string('width').prop('410'),
             string('height').prop('320'),
             string('rx').prop('20'),
-            string('fill').prop(VELO_GREEN),
-            string('fill-opacity').prop('10%')
+            string('fill').prop('#343636'),
+            string('fill-opacity').prop('85%')
         );
     }
 
