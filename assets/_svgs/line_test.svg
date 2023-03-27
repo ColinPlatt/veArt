@@ -1,0 +1,15 @@
+
+<svg width="375" height="375" version="1.1" viewBox="0 0 132 132" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <linearGradient id="linearGradient6099" gradientUnits="userSpaceOnUse">
+   <stop offset=".4"/>
+   <stop stop-opacity="0" offset=".9"/>
+  </linearGradient>
+  
+  
+ </defs>
+ 
+<rect height="100%" width="100% fill="gray"></rect>
+ 
+ <path d="m0 157c55-20 112-100 132-100" fill="none" stroke="url(#linearGradient6099)" stroke-width=".3"/>
+</svg>
